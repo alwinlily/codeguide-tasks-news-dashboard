@@ -1,4 +1,4 @@
-import { UserBtn } from "@/components/user-button";
+import { UserButton } from "@clerk/nextjs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -24,7 +24,7 @@ export default function AdminLayout({
           </h1>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <UserBtn />
+            <UserButton />
           </div>
         </div>
       </header>

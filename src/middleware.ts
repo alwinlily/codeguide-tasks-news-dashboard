@@ -1,11 +1,19 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+// Authentication middleware temporarily disabled
+// This middleware allows all routes to be accessible without authentication
+// Re-enable Clerk authentication when Supabase tables are set up
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/profile(.*)"]);
+import { NextRequest, NextResponse } from 'next/server';
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+export default function middleware(request: NextRequest) {
+  // Allow all requests to pass through without authentication
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
 };

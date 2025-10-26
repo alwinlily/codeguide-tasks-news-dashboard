@@ -9,8 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model TodoTask {
@@ -20,8 +20,12 @@ model TodoTask {
   isUrgent  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  userId    String?  @map("user_id")
 
   @@map("todo_tasks")
+  @@index([dueDate])
+  @@index([isUrgent])
+  @@index([createdAt])
 }
 
 model CompanyNews {
@@ -31,6 +35,9 @@ model CompanyNews {
   publishedAt DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  userId      String?  @map("user_id")
 
   @@map("company_news")
+  @@index([publishedAt])
+  @@index([createdAt])
 }
