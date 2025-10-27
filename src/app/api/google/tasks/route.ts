@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { googleTasksClient, googleTaskToLocalTask } from '@/lib/google-tasks';
+import { googleTasksClient, googleTaskToLocalTask, GoogleTask } from '@/lib/google-tasks';
 import { createSupabaseServerClient } from '@/lib/supabase';
 
 // GET /api/google/tasks - Fetch Google Tasks for authenticated user
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       });
 
       const transformedTasks = tasks.map(task => ({
-        ...googleTaskToLocalTask(task),
+        ...googleTaskToLocalTask(task as GoogleTask),
         taskListId: taskList.id,
         taskListTitle: taskList.title,
         googleId: task.id,

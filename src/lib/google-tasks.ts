@@ -172,7 +172,7 @@ export class GoogleTasksClient {
       const response = await tasks.tasks.update({
         tasklist: taskListId,
         task: taskId,
-        requestBody,
+        requestBody: requestBody as Schema$Task,
       });
       return response.data;
     } catch (error) {
@@ -247,7 +247,7 @@ export function googleTaskToLocalTask(googleTask: GoogleTask): LocalTask {
   return {
     id: `google_${googleTask.id || 'unknown'}`,
     title: googleTask.title,
-    dueDate: parseGoogleTasksDate(googleTask.due),
+    dueDate: parseGoogleTasksDate(googleTask.due) || undefined,
     isUrgent: false, // Google Tasks doesn't have urgency, set default
     completed: googleTask.status === 'completed',
   };
