@@ -15,7 +15,7 @@ const updateTodoSchema = z.object({
   isUrgent: z.boolean().optional(),
 });
 
-// GET /api/todos - Get ALL todos (both urgent and non-urgent)
+// GET /api/todos - Get NON-URGENT todos only (for dashboard To Do section)
 export async function GET() {
   try {
     // Temporarily disable auth check for testing
@@ -25,7 +25,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('todo_tasks')
       .select('*')
-      .order('is_urgent', { ascending: false }) // Show urgent tasks first
+      .eq('is_urgent', false) // Only get non-urgent todos
       .order('due_date', { ascending: true })
       .order('created_at', { ascending: false });
 
