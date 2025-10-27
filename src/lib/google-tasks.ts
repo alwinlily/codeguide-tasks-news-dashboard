@@ -243,7 +243,7 @@ export interface LocalTask {
   userId?: string;
 }
 
-export function googleTaskToLocalTask(googleTask: GoogleTask): LocalTask {
+export function googleTaskToLocalTask(googleTask: GoogleTask | GoogleApiResponseTask): LocalTask {
   return {
     id: `google_${googleTask.id || 'unknown'}`,
     title: googleTask.title,

@@ -16,7 +16,7 @@ const updateNewsSchema = z.object({
 });
 
 // Transform helper function
-function transformNewsData(data) {
+function transformNewsData(data: any[]) {
   return data?.map(item => ({
     id: item.id,
     title: item.title,

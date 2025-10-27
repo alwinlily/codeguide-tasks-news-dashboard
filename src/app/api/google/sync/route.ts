@@ -2,16 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { googleTasksClient, googleTaskToLocalTask } from '@/lib/google-tasks';
 import { createSupabaseServerClient } from '@/lib/supabase';
 
-// Google API response interface (different from our GoogleTask interface)
-interface GoogleApiResponseTask {
-  id?: string | null;
-  title: string;
-  notes?: string;
-  due?: string;
-  status: 'needsAction' | 'completed';
-  updated: string;
-}
-
 // POST /api/google/sync - Sync local todos with Google Tasks
 export async function POST(request: NextRequest) {
   try {
@@ -164,7 +154,7 @@ export async function POST(request: NextRequest) {
       if (!localTodo) {
         // This is a Google-only task, create it locally
         try {
-          const transformedTask = googleTaskToLocalTask(googleTask as GoogleApiResponseTask);
+          const transformedTask = googleTaskToLocalTask(googleTask);
 
           await supabase
             .from('todo_tasks')
@@ -174,20 +164,20 @@ export async function POST(request: NextRequest) {
               due_date: transformedTask.dueDate?.toISOString(),
               is_urgent: false, // Default for Google Tasks
               user_id: userId,
-              created_at: new Date(googleTask.created || new Date()).toISOString(),
+              created_at: new Date(googleTask.updated || new Date()).toISOString(),
               updated_at: new Date(googleTask.updated || new Date()).toISOString(),
             });
 
           syncResults.created.push({
             localId: localGoogleId,
             googleId: googleTask.id!,
-            title: googleTask.title!,
+            title: googleTask.title || 'Unknown Task',
           });
         } catch (error) {
           console.error('Error creating local todo:', error);
           syncResults.conflicts.push({
             googleId: googleTask.id!,
-            title: googleTask.title,
+            title: googleTask.title || 'Unknown Task',
             error: 'Failed to create locally',
           });
         }
@@ -210,7 +200,7 @@ export async function POST(request: NextRequest) {
             syncResults.updated.push({
               localId: localGoogleId,
               googleId: googleTask.id!,
-              title: googleTask.title!,
+              title: googleTask.title || 'Unknown Task',
               field: 'completed',
               newValue: googleCompleted,
             });
@@ -219,7 +209,7 @@ export async function POST(request: NextRequest) {
             syncResults.conflicts.push({
               localId: localGoogleId,
               googleId: googleTask.id!,
-              title: googleTask.title,
+              title: googleTask.title || 'Unknown Task',
               error: 'Failed to update local completion status',
             });
           }
