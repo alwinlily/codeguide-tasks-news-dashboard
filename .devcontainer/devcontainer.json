@@ -1,5 +1,6 @@
 {
   "name": "CodeGuide Starter",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
@@ -41,7 +42,7 @@
   "remoteUser": "node",
   "mounts": [
     "source=claude-code-bashhistory,target=/commandhistory,type=volume",
-    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind"
+    "source=${localWorkspaceFolder}/.vscode,target=/home/node/.vscode,type=bind"
   ],
   "remoteEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
@@ -50,7 +51,8 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "sudo /usr/local/bin/init-firewall.sh",
+  "postCreateCommand": "npm install",
+  "postStartCommand": "npm run dev",
   "forwardPorts": [
     3000
   ],

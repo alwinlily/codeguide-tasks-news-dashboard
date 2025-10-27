@@ -46,7 +46,7 @@ export function MotivationalQuote() {
           </div>
 
           <blockquote className="text-purple-800 dark:text-purple-200 text-lg italic leading-relaxed mb-3">
-            "{quote.text}"
+            &quot;{quote.text}&quot;
           </blockquote>
 
           <cite className="text-purple-700 dark:text-purple-300 text-sm not-italic flex items-center gap-1">

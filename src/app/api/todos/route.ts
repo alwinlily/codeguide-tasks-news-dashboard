@@ -15,7 +15,7 @@ const updateTodoSchema = z.object({
   isUrgent: z.boolean().optional(),
 });
 
-// GET /api/todos - Get ALL todos (both urgent and non-urgent)
+// GET /api/todos - Get NON-URGENT todos only (for dashboard To Do section)
 export async function GET() {
   try {
     // Temporarily disable auth check for testing
@@ -25,7 +25,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('todo_tasks')
       .select('*')
-      .order('is_urgent', { ascending: false }) // Show urgent tasks first
+      .eq('is_urgent', false) // Only get non-urgent todos
       .order('due_date', { ascending: true })
       .order('created_at', { ascending: false });
 
@@ -125,7 +125,8 @@ export async function POST(request: NextRequest) {
 // PUT /api/todos - Update a todo
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const session = await auth();
+    const userId = session?.userId;
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -147,7 +148,11 @@ export async function PUT(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
 
     // Convert field names to match database
-    const dbUpdateData = {};
+    const dbUpdateData: {
+      title?: string;
+      due_date?: Date;
+      is_urgent?: boolean;
+    } = {};
     if (validatedData.title !== undefined) dbUpdateData.title = validatedData.title;
     if (validatedData.dueDate !== undefined) dbUpdateData.due_date = validatedData.dueDate;
     if (validatedData.isUrgent !== undefined) dbUpdateData.is_urgent = validatedData.isUrgent;
@@ -204,7 +209,8 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/todos - Delete a todo
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const session = await auth();
+    const userId = session?.userId;
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },

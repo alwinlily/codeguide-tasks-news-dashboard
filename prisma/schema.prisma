@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,30 +8,30 @@ datasource db {
 }
 
 model TodoTask {
-  id        String   @id @default(cuid())
-  title     String
-  dueDate   DateTime
-  isUrgent  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    String?  @map("user_id")
+  id         String    @id @default(dbgenerated("gen_random_uuid()"))
+  title      String
+  due_date   DateTime  @db.Timestamptz(6)
+  is_urgent  Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  userId     String?   @map("user_id")
 
+  @@index([created_at], map: "idx_todo_tasks_created_at")
+  @@index([due_date], map: "idx_todo_tasks_due_date")
+  @@index([is_urgent], map: "idx_todo_tasks_is_urgent")
   @@map("todo_tasks")
-  @@index([dueDate])
-  @@index([isUrgent])
-  @@index([createdAt])
 }
 
 model CompanyNews {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  publishedAt DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  userId      String?  @map("user_id")
+  id           String    @id @default(dbgenerated("gen_random_uuid()"))
+  title        String
+  content      String
+  published_at DateTime? @default(now()) @db.Timestamptz(6)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  userId       String?   @map("user_id")
 
+  @@index([created_at], map: "idx_company_news_created_at")
+  @@index([published_at], map: "idx_company_news_published_at")
   @@map("company_news")
-  @@index([publishedAt])
-  @@index([createdAt])
 }
