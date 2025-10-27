@@ -1,37 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Newspaper, AlertTriangle, RefreshCw } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar, Clock, Newspaper, AlertTriangle, RefreshCw, Cloud } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-
-interface TodoTask {
-  id: string;
-  title: string;
-  dueDate: string;
-  isUrgent: boolean;
-}
-
-interface CompanyNews {
-  id: string;
-  title: string;
-  content: string;
-  publishedAt: string;
-}
-
-interface WeatherData {
-  location: string;
-  current: {
-    temperature: number;
-    description: string;
-  };
-}
+// import { WeeklyWeather } from "@/components/weekly-weather";
+// import { MotivationalQuote } from "@/components/motivational-quote";
+// import GoogleTasksSync from "@/components/google-tasks-sync";
+import { useState, useEffect } from "react";
+import { TodoTask, CompanyNews, WeatherData } from "@/types";
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 
 async function getTodos() {
   try {
-    const response = await fetch(`http://localhost:3002/api/todos?t=${Date.now()}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3016'}/api/todos?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch todos');
@@ -44,7 +27,7 @@ async function getTodos() {
 
 async function getUrgentTodos() {
   try {
-    const response = await fetch(`http://localhost:3002/api/urgent?t=${Date.now()}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3016'}/api/urgent?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch urgent todos');
@@ -57,7 +40,7 @@ async function getUrgentTodos() {
 
 async function getNews() {
   try {
-    const response = await fetch(`http://localhost:3002/api/news?t=${Date.now()}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3016'}/api/news?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch news');
@@ -70,7 +53,7 @@ async function getNews() {
 
 async function getWeather() {
   try {
-    const response = await fetch(`http://localhost:3002/api/weather?t=${Date.now()}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3016'}/api/weather?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch weather');
@@ -82,6 +65,7 @@ async function getWeather() {
 }
 
 export default function Home() {
+  const { userId } = useAuth();
   const [todos, setTodos] = useState<TodoTask[]>([]);
   const [urgentTodos, setUrgentTodos] = useState<TodoTask[]>([]);
   const [news, setNews] = useState<CompanyNews[]>([]);
@@ -162,6 +146,14 @@ export default function Home() {
               Refresh
             </Button>
             <ThemeToggle />
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="outline">Sign In</Button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
           </div>
         </div>
       </header>
@@ -266,27 +258,25 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Weather Info */}
-        {weather && (
-          <div className="mt-8">
-            <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200 dark:border-cyan-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">🌤️</span>
-                  Weather in {weather.location}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-3xl font-bold">{weather.current.temperature}°C</div>
-                    <div className="text-muted-foreground capitalize">{weather.current.description}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Google Tasks Sync - Temporarily disabled */}
+        {/* <div className="mt-8">
+          <GoogleTasksSync userId={userId || undefined} />
+        </div> */}
+
+        {/* Weekly Weather Forecast - Temporarily disabled */}
+        {/* <div className="mt-8">
+          {weather && (
+            <WeeklyWeather
+              forecast={weather.forecast}
+              location={weather.location}
+            />
+          )}
+        </div> */}
+
+        {/* Daily Motivational Quote - Temporarily disabled */}
+        {/* <div className="mt-8">
+          <MotivationalQuote />
+        </div> */}
       </main>
     </div>
   );

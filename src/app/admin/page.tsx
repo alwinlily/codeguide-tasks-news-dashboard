@@ -2,24 +2,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Newspaper, AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
+// Server-side data fetching
 async function getStats() {
   try {
-    const [todosRes, urgentRes, newsRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/todos`, { cache: 'no-store' }),
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/urgent`, { cache: 'no-store' }),
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/news`, { cache: 'no-store' }),
+    const supabase = await createSupabaseServerClient();
+
+    // Fetch all data directly from Supabase
+    const [allTodosRes, urgentRes, newsRes] = await Promise.all([
+      supabase.from('todo_tasks').select('*'),
+      supabase.from('todo_tasks').select('*').eq('is_urgent', true),
+      supabase.from('company_news').select('*')
     ]);
 
-    const todos = await todosRes.json();
-    const urgentTodos = await urgentRes.json();
-    const news = await newsRes.json();
-
-    return {
-      totalTodos: todos.length || 0,
-      urgentTodos: urgentTodos.length || 0,
-      totalNews: news.length || 0,
+    const stats = {
+      totalTodos: allTodosRes.data?.length || 0,
+      urgentTodos: urgentRes.data?.length || 0,
+      totalNews: newsRes.data?.length || 0,
     };
+
+    console.log('📊 Server-side stats:', stats);
+    return stats;
   } catch (error) {
     console.error('Error fetching stats:', error);
     return {

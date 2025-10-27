@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 
 export default function NewTodoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
-    dueDate: "",
+    dueDate: format(new Date(), 'yyyy-MM-dd'),
     isUrgent: false,
   });
 
