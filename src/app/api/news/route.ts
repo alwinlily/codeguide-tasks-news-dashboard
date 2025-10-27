@@ -15,8 +15,19 @@ const updateNewsSchema = z.object({
   publishedAt: z.string().transform((val) => new Date(val)).optional(),
 });
 
+// News item interface for Supabase data
+interface NewsItem {
+  id: string;
+  title: string;
+  content: string;
+  published_at: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+}
+
 // Transform helper function
-function transformNewsData(data: any[]) {
+function transformNewsData(data: NewsItem[]) {
   return data?.map(item => ({
     id: item.id,
     title: item.title,
@@ -136,10 +147,14 @@ export async function PUT(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
 
     // Convert field names to match database
-    const dbUpdateData = {};
+    const dbUpdateData: {
+      title?: string;
+      content?: string;
+      published_at?: string;
+    } = {};
     if (validatedData.title !== undefined) dbUpdateData.title = validatedData.title;
     if (validatedData.content !== undefined) dbUpdateData.content = validatedData.content;
-    if (validatedData.publishedAt !== undefined) dbUpdateData.published_at = validatedData.publishedAt;
+    if (validatedData.publishedAt !== undefined) dbUpdateData.published_at = validatedData.publishedAt.toISOString();
 
     const { data, error } = await supabase
       .from('company_news')

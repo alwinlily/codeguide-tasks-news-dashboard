@@ -154,7 +154,8 @@ export async function POST(request: NextRequest) {
       if (!localTodo) {
         // This is a Google-only task, create it locally
         try {
-          const transformedTask = googleTaskToLocalTask(googleTask);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const transformedTask = googleTaskToLocalTask(googleTask as any);
 
           await supabase
             .from('todo_tasks')
