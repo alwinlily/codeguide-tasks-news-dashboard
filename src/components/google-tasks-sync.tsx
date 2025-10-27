@@ -17,7 +17,7 @@ interface SyncResult {
     googleId: string;
     title: string;
     field: string;
-    newValue: any;
+    newValue: string | number | boolean;
   }>;
   conflicts: Array<{
     localId?: string;
@@ -291,7 +291,7 @@ export default function GoogleTasksSync({ userId }: GoogleTasksSyncProps) {
               <li>Get Google Cloud credentials</li>
               <li>Enable Google Tasks API</li>
               <li>Add Client ID and Secret to .env.local</li>
-              <li>Click "Connect Google Tasks" above</li>
+              <li>Click &quot;Connect Google Tasks&quot; above</li>
             </ol>
           </div>
         )}

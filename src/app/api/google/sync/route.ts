@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { googleTasksClient, googleTaskToLocalTask, localTaskToGoogleTask } from '@/lib/google-tasks';
+import { googleTasksClient, googleTaskToLocalTask } from '@/lib/google-tasks';
 import { createSupabaseServerClient } from '@/lib/supabase';
+
+// Google API response interface (different from our GoogleTask interface)
+interface GoogleApiResponseTask {
+  id?: string | null;
+  title: string;
+  notes?: string;
+  due?: string;
+  status: 'needsAction' | 'completed';
+  updated: string;
+}
 
 // POST /api/google/sync - Sync local todos with Google Tasks
 export async function POST(request: NextRequest) {
@@ -81,9 +91,24 @@ export async function POST(request: NextRequest) {
 
     // Sync logic
     const syncResults = {
-      created: [],
-      updated: [],
-      conflicts: [],
+      created: [] as Array<{
+        localId: string;
+        googleId: string | null | undefined;
+        title: string;
+      }>,
+      updated: [] as Array<{
+        localId: string;
+        googleId: string | null | undefined;
+        title: string;
+        field: string;
+        newValue: string | number | boolean;
+      }>,
+      conflicts: [] as Array<{
+        localId?: string;
+        googleId?: string | null | undefined;
+        title: string;
+        error: string;
+      }>,
     };
 
     // Get or create sync task list
@@ -139,7 +164,7 @@ export async function POST(request: NextRequest) {
       if (!localTodo) {
         // This is a Google-only task, create it locally
         try {
-          const transformedTask = googleTaskToLocalTask(googleTask);
+          const transformedTask = googleTaskToLocalTask(googleTask as GoogleApiResponseTask);
 
           await supabase
             .from('todo_tasks')

@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, Auth } from 'googleapis';
 
 // OAuth2 configuration
 const oauth2Client = new google.auth.OAuth2(
@@ -14,7 +14,7 @@ const SCOPES = [
 ];
 
 export class GoogleTasksClient {
-  private auth: any;
+  private auth: Auth.OAuth2Client;
 
   constructor() {
     this.auth = oauth2Client;
@@ -43,12 +43,12 @@ export class GoogleTasksClient {
   }
 
   // Set credentials from stored tokens
-  setCredentials(tokens: any) {
+  setCredentials(tokens: Auth.Credentials) {
     this.auth.setCredentials(tokens);
   }
 
   // Get current credentials (for storage)
-  getCredentials(): any {
+  getCredentials(): Auth.Credentials {
     return this.auth.credentials;
   }
 
@@ -161,7 +161,7 @@ export class GoogleTasksClient {
         task: taskId,
       });
 
-      const requestBody: any = {
+      const requestBody = {
         ...currentTask.data,
         ...taskData,
         status: taskData.completed !== undefined
@@ -226,7 +226,7 @@ export function parseGoogleTasksDate(dateString?: string): Date | null {
 
 // Sync functions for integrating with existing todo system
 export interface GoogleTask {
-  id: string;
+  id: string | null | undefined;
   title: string;
   notes?: string;
   due?: string;
@@ -245,7 +245,7 @@ export interface LocalTask {
 
 export function googleTaskToLocalTask(googleTask: GoogleTask): LocalTask {
   return {
-    id: `google_${googleTask.id}`,
+    id: `google_${googleTask.id || 'unknown'}`,
     title: googleTask.title,
     dueDate: parseGoogleTasksDate(googleTask.due),
     isUrgent: false, // Google Tasks doesn't have urgency, set default

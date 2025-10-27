@@ -11,6 +11,28 @@ export interface WeatherDay {
   chanceOfRain: number;
 }
 
+interface WeatherApiDay {
+  date: string;
+  day: {
+    avgtemp_c: number;
+    mintemp_c: number;
+    maxtemp_c: number;
+    condition: {
+      text: string;
+      icon: string;
+    };
+    avghumidity: number;
+    maxwind_kph: number;
+    daily_chance_of_rain: number;
+  };
+}
+
+interface WeatherApiResponse {
+  forecast: {
+    forecastday: WeatherApiDay[];
+  };
+}
+
 export interface WeatherData {
   location: string;
   current: {
@@ -52,9 +74,9 @@ export async function getWeatherForBandung(): Promise<WeatherData> {
       throw new Error(`Weather API responded with status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as WeatherApiResponse;
 
-    const forecast: WeatherDay[] = data.forecast.forecastday.map((day: any) => ({
+    const forecast: WeatherDay[] = data.forecast.forecastday.map((day: WeatherApiDay) => ({
       date: day.date,
       day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
       temperature: Math.round(day.day.avgtemp_c),
