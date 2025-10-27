@@ -31,7 +31,7 @@ interface WeatherData {
 
 async function getTodos() {
   try {
-    const response = await fetch(`http://localhost:3000/api/todos?t=${Date.now()}`, {
+    const response = await fetch(`/api/todos?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch todos');
@@ -44,7 +44,7 @@ async function getTodos() {
 
 async function getUrgentTodos() {
   try {
-    const response = await fetch(`http://localhost:3000/api/urgent?t=${Date.now()}`, {
+    const response = await fetch(`/api/urgent?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch urgent todos');
@@ -57,7 +57,7 @@ async function getUrgentTodos() {
 
 async function getNews() {
   try {
-    const response = await fetch(`http://localhost:3000/api/news?t=${Date.now()}`, {
+    const response = await fetch(`/api/news?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch news');
@@ -70,7 +70,7 @@ async function getNews() {
 
 async function getWeather() {
   try {
-    const response = await fetch(`http://localhost:3000/api/weather?t=${Date.now()}`, {
+    const response = await fetch(`/api/weather?t=${Date.now()}`, {
       cache: 'no-store',
     });
     if (!response.ok) throw new Error('Failed to fetch weather');
