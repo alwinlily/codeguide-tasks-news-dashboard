@@ -1,4 +1,4 @@
-import { google, Auth } from 'googleapis';
+import { google, Auth, tasks_v1 } from 'googleapis';
 
 // OAuth2 configuration
 const oauth2Client = new google.auth.OAuth2(
@@ -172,7 +172,7 @@ export class GoogleTasksClient {
       const response = await tasks.tasks.update({
         tasklist: taskListId,
         task: taskId,
-        requestBody: requestBody as Schema$Task,
+        requestBody: requestBody as tasks_v1.Schema$Task,
       });
       return response.data;
     } catch (error) {
