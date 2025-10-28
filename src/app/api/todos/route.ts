@@ -18,14 +18,21 @@ const updateTodoSchema = z.object({
 // GET /api/todos - Get NON-URGENT todos only (for dashboard To Do section)
 export async function GET() {
   try {
-    // Temporarily disable auth check for testing
-    // const { userId } = auth();
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase
       .from('todo_tasks')
       .select('*')
       .eq('is_urgent', false) // Only get non-urgent todos
+      .eq('user_id', userId) // Only get user's own todos
       .order('due_date', { ascending: true })
       .order('created_at', { ascending: false });
 
@@ -61,14 +68,13 @@ export async function GET() {
 // POST /api/todos - Create a new todo
 export async function POST(request: NextRequest) {
   try {
-    // Temporarily disable auth check for testing
-    // const { userId } = auth();
-    // if (!userId) {
-    //   return NextResponse.json(
-    //     { error: "Unauthorized" },
-    //     { status: 401 }
-    //   );
-    // }
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const body = await request.json();
     const validatedData = createTodoSchema.parse(body);
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest) {
         title: validatedData.title,
         due_date: validatedData.dueDate,
         is_urgent: validatedData.isUrgent,
-        user_id: null // Temporarily null for testing
+        user_id: userId
       })
       .select()
       .single();
@@ -125,8 +131,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/todos - Update a todo
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
-    const userId = session?.userId;
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -209,8 +214,7 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/todos - Delete a todo
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
-    const userId = session?.userId;
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized" },

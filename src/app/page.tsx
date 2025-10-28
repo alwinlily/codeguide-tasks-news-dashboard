@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Newspaper, AlertTriangle, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Newspaper, AlertTriangle, RefreshCw, User, LogOut, Crown, Lock } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 interface TodoTask {
   id: string;
@@ -31,11 +32,15 @@ interface WeatherData {
 
 async function getTodos() {
   try {
+    console.log('getTodos: Starting fetch...');
     const response = await fetch(`/api/todos?t=${Date.now()}`, {
       cache: 'no-store',
     });
+    console.log('getTodos: Response status:', response.status);
     if (!response.ok) throw new Error('Failed to fetch todos');
-    return response.json();
+    const data = await response.json();
+    console.log('getTodos: Received data:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching todos:', error);
     return [];
@@ -82,6 +87,8 @@ async function getWeather() {
 }
 
 export default function Home() {
+  const { isLoaded, isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
   const [todos, setTodos] = useState<TodoTask[]>([]);
   const [urgentTodos, setUrgentTodos] = useState<TodoTask[]>([]);
   const [news, setNews] = useState<CompanyNews[]>([]);
@@ -90,7 +97,11 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Check if user is admin
+  const isAdmin = user?.emailAddresses?.[0]?.emailAddress === "alwin.lily@gmail.com";
+
   const fetchData = async () => {
+    console.log('fetchData called - debugging');
     try {
       setIsRefreshing(true);
       const [todosData, urgentTodosData, newsData, weatherData] = await Promise.all([
@@ -124,6 +135,44 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Show loading while Clerk is initializing
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // TEMPORARILY DISABLE AUTHENTICATION REDIRECT - Show login prompt instead of redirecting
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <Lock className="h-16 w-16 mx-auto text-muted-foreground" />
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Authentication Required</h1>
+            <p className="text-muted-foreground mb-6">Please sign in to access your dashboard.</p>
+            <div className="space-y-3">
+              <a
+                href="/sign-in"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              >
+                Sign In
+              </a>
+              <div className="text-sm text-muted-foreground">
+                Don't have an account? <a href="/sign-up" className="text-primary hover:underline">Sign up</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -142,7 +191,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Dashboard
+              Dashboard - Fixed
             </h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
@@ -161,6 +210,31 @@ export default function Home() {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
+
+            {/* User Info */}
+            {user && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  {user.firstName || user.emailAddresses?.[0]?.emailAddress}
+                </span>
+                {isAdmin && (
+                  <Crown className="h-4 w-4 text-yellow-500" aria-label="Admin" />
+                )}
+              </div>
+            )}
+
+            {/* Sign Out Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => signOut()}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+
             <ThemeToggle />
           </div>
         </div>

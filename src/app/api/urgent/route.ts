@@ -1,16 +1,25 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase";
-// import { auth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 // GET /api/urgent - Get all urgent todos
 export async function GET() {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase
       .from('todo_tasks')
       .select('*')
       .eq('is_urgent', true)
+      .eq('user_id', userId) // Only get user's own urgent todos
       .order('due_date', { ascending: true })
       .order('created_at', { ascending: false });
 
