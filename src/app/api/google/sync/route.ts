@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       if (!isGoogleSynced) {
         // This is a local-only task, create it in Google
         try {
-          const googleTask = await googleTasksClient.createTask(syncTaskList.id!, {
+          const googleTask = await googleTasksClient.createTaskInList(syncTaskList.id!, {
             title: localTodo.title,
             notes: `Urgent: ${localTodo.is_urgent ? 'Yes' : 'No'}`,
             due: localTodo.due_date ? new Date(localTodo.due_date).toISOString() : undefined,
