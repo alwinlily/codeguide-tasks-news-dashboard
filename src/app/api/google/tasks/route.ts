@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the task
-    const newTask = await googleTasksClient.createTask(targetTaskListId, {
+    const newTask = await googleTasksClient.createTaskInList(targetTaskListId, {
       title,
       notes,
       due,
