@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 async function getStats() {
   try {
     // Get Google tokens from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const accessToken = cookieStore.get('google_access_token')?.value;
     const refreshToken = cookieStore.get('google_refresh_token')?.value;
 
