@@ -52,11 +52,35 @@ export default function TodosPage() {
 
   const fetchTodos = async () => {
     try {
-      const response = await fetch('/api/todos');
-      if (response.ok) {
-        const data = await response.json();
-        setTodos(data);
+      // Fetch both regular todos and urgent tasks
+      const [todosResponse, urgentResponse] = await Promise.all([
+        fetch('/api/todos'),
+        fetch('/api/urgent')
+      ]);
+
+      let allTasks: TodoTask[] = [];
+
+      if (todosResponse.ok) {
+        const todosData = await todosResponse.json();
+        allTasks = [...allTasks, ...todosData];
       }
+
+      if (urgentResponse.ok) {
+        const urgentData = await urgentResponse.json();
+        allTasks = [...allTasks, ...urgentData];
+      }
+
+      // Sort all tasks by due date and creation date
+      allTasks.sort((a, b) => {
+        const dateA = new Date(a.dueDate);
+        const dateB = new Date(b.dueDate);
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateA.getTime() - dateB.getTime();
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      setTodos(allTasks);
     } catch (error) {
       console.error('Error fetching todos:', error);
     } finally {
@@ -66,7 +90,11 @@ export default function TodosPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/todos?id=${id}`, {
+      // Find the task to determine which API endpoint to use
+      const taskToDelete = todos.find(todo => todo.id === id);
+      const endpoint = taskToDelete?.isUrgent ? '/api/urgent' : '/api/todos';
+
+      const response = await fetch(`${endpoint}?id=${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { googleTasksClient } from '@/lib/google-tasks';
-import { createSupabaseServerClient } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
-    const state = searchParams.get('state'); // This contains the user ID
+    const state = searchParams.get('state'); // This contains the redirect URL
     const error = searchParams.get('error');
 
     if (error) {
@@ -21,39 +20,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!state) {
-      return NextResponse.redirect(
-        new URL('/?google_auth_error=no_state', request.url)
-      );
-    }
-
     // Exchange code for tokens
     const tokens = await googleTasksClient.exchangeCodeForTokens(code);
 
-    // Store tokens in database for the user
-    const supabase = await createSupabaseServerClient();
+    // Store tokens securely in cookies
+    const response = NextResponse.redirect(
+      new URL(state || '/', request.url)
+    );
 
-    const { error: dbError } = await supabase
-      .from('user_google_tokens')
-      .upsert({
-        user_id: state,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expiry_date: tokens.expiry_date,
-        updated_at: new Date().toISOString(),
+    // Set secure HTTP-only cookies for the tokens
+    response.cookies.set('google_access_token', tokens.access_token || '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 3600 // 1 hour
+    });
+
+    if (tokens.refresh_token) {
+      response.cookies.set('google_refresh_token', tokens.refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
       });
-
-    if (dbError) {
-      console.error('Error storing Google tokens:', dbError);
-      return NextResponse.redirect(
-        new URL('/?google_auth_error=storage_failed', request.url)
-      );
     }
 
-    // Redirect back to the main page with success message
-    return NextResponse.redirect(
-      new URL('/?google_auth=success', request.url)
-    );
+    return response;
 
   } catch (error) {
     console.error('Error in Google auth callback:', error);

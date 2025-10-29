@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Newspaper, AlertTriangle, RefreshCw, User, LogOut, Crown, Lock } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Calendar, Clock, Newspaper, AlertTriangle, RefreshCw, User, LogOut, Crown, Lock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useAuth, useUser } from "@clerk/nextjs";
@@ -96,9 +95,45 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isGoogleConnecting, setIsGoogleConnecting] = useState(false);
 
   // Check if user is admin
   const isAdmin = user?.emailAddresses?.[0]?.emailAddress === "alwin.lily@gmail.com";
+
+  // Check if user is connected to Google Tasks
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+
+  useEffect(() => {
+    // Check if Google tokens exist in cookies
+    const checkGoogleConnection = () => {
+      const hasGoogleToken = document.cookie.includes('google_access_token');
+      setIsGoogleConnected(hasGoogleToken);
+    };
+
+    checkGoogleConnection();
+  }, []); // Check Google connection on mount
+
+  // Handle Google Tasks connection
+  const handleGoogleConnect = async () => {
+    try {
+      setIsGoogleConnecting(true);
+
+      // Get Google auth URL
+      const response = await fetch('/api/google/auth?redirect=/');
+      const data = await response.json();
+
+      if (data.authUrl) {
+        // Redirect to Google OAuth
+        window.location.href = data.authUrl;
+      } else {
+        console.error('Failed to get Google auth URL');
+      }
+    } catch (error) {
+      console.error('Error connecting to Google Tasks:', error);
+    } finally {
+      setIsGoogleConnecting(false);
+    }
+  };
 
   const fetchData = async () => {
     console.log('fetchData called - debugging');
@@ -211,6 +246,18 @@ export default function Home() {
               Refresh
             </Button>
 
+            {/* Google Tasks Connection */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGoogleConnect}
+              disabled={isGoogleConnecting}
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              {isGoogleConnecting ? 'Connecting...' : 'Connect Google Tasks'}
+            </Button>
+
             {/* User Info */}
             {user && (
               <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg">
@@ -234,8 +281,6 @@ export default function Home() {
               <LogOut className="h-4 w-4" />
               Sign Out
             </Button>
-
-            <ThemeToggle />
           </div>
         </div>
       </header>

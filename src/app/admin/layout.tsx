@@ -1,13 +1,15 @@
 import { UserButton } from "@clerk/nextjs";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
   Calendar,
   Newspaper,
   Home,
-  Plus
+  Plus,
+  LayoutDashboard
 } from "lucide-react";
+
+// Admin layout with dashboard menu
 
 export default function AdminLayout({
   children,
@@ -23,7 +25,6 @@ export default function AdminLayout({
             Admin Panel
           </h1>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
             <UserButton />
           </div>
         </div>
@@ -35,8 +36,15 @@ export default function AdminLayout({
           <nav className="p-4 space-y-2">
             <Link href="/admin">
               <Button variant="ghost" className="w-full justify-start">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Admin Dashboard
+              </Button>
+            </Link>
+
+            <Link href="/" target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" className="w-full justify-start">
                 <Home className="mr-2 h-4 w-4" />
-                Dashboard
+                Main Dashboard
               </Button>
             </Link>
 

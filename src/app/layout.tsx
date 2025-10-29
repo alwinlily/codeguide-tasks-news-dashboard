@@ -35,15 +35,16 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning className="dark">
         <body
           className={`${geistSans.className} ${geistMono.className} ${parkinsans.className} antialiased`}
         >
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="dark"
+            enableSystem={false}
             disableTransitionOnChange
+            forcedTheme="dark"
           >
             {children}
           </ThemeProvider>

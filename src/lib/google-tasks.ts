@@ -219,19 +219,19 @@ export function formatDateForGoogleTasks(date: Date): string {
   return date.toISOString().split('T')[0] + 'T00:00:00.000Z';
 }
 
-export function parseGoogleTasksDate(dateString?: string): Date | null {
+export function parseGoogleTasksDate(dateString?: string | null): Date | null {
   if (!dateString) return null;
   return new Date(dateString);
 }
 
 // Sync functions for integrating with existing todo system
 export interface GoogleTask {
-  id: string | null | undefined;
-  title: string;
-  notes?: string;
-  due?: string;
-  status: 'needsAction' | 'completed';
-  updated: string;
+  id?: string | null;
+  title?: string | null;
+  notes?: string | null;
+  due?: string | null;
+  status?: 'needsAction' | 'completed' | string | null;
+  updated?: string | null;
 }
 
 export interface LocalTask {
@@ -246,14 +246,14 @@ export interface LocalTask {
 export function googleTaskToLocalTask(googleTask: GoogleTask): LocalTask {
   return {
     id: `google_${googleTask.id || 'unknown'}`,
-    title: googleTask.title,
+    title: googleTask.title || 'Untitled Task',
     dueDate: parseGoogleTasksDate(googleTask.due) || undefined,
     isUrgent: false, // Google Tasks doesn't have urgency, set default
     completed: googleTask.status === 'completed',
   };
 }
 
-export function localTaskToGoogleTask(localTask: LocalTask): Omit<GoogleTask, 'id' | 'updated'> {
+export function localTaskToGoogleTask(localTask: LocalTask): GoogleTask {
   return {
     title: localTask.title,
     notes: `Synced from local task system`,
