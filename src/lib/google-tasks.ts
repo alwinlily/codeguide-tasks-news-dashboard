@@ -33,11 +33,18 @@ export class GoogleTasksClient {
   // Exchange authorization code for tokens
   async exchangeCodeForTokens(code: string, redirectUri?: string) {
     try {
+      let authClient = this.auth;
+
       if (redirectUri) {
-        // Temporarily set redirect URI for this exchange
-        this.auth.redirectUri = redirectUri;
+        // Create a new OAuth client with the correct redirect URI
+        authClient = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          redirectUri
+        );
       }
-      const { tokens } = await this.auth.getToken(code);
+
+      const { tokens } = await authClient.getToken(code);
       this.auth.setCredentials(tokens);
       return tokens;
     } catch (error) {
