@@ -2,30 +2,83 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Newspaper, AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createSupabaseServerClient } from "@/lib/supabase";
+import { googleTasksClient } from "@/lib/google-tasks";
+import { cookies } from "next/headers";
 
 // Server-side data fetching
 async function getStats() {
   try {
-    const supabase = await createSupabaseServerClient();
+    // Get Google tokens from cookies
+    const cookieStore = cookies();
+    const accessToken = cookieStore.get('google_access_token')?.value;
+    const refreshToken = cookieStore.get('google_refresh_token')?.value;
 
-    // Fetch all data directly from Supabase
-    const [allTodosRes, urgentRes, newsRes] = await Promise.all([
-      supabase.from('todo_tasks').select('*'),
-      supabase.from('todo_tasks').select('*').eq('is_urgent', true),
-      supabase.from('company_news').select('*')
-    ]);
+    if (!accessToken) {
+      console.log('No Google access token found, returning zero stats');
+      return {
+        totalTodos: 0,
+        urgentTodos: 0,
+        totalNews: 0,
+      };
+    }
+
+    // Set up Google Tasks client
+    googleTasksClient.setCredentials({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    // Check if credentials are valid
+    const isValid = await googleTasksClient.isCredentialsValid();
+    if (!isValid) {
+      console.log('Google credentials invalid, returning zero stats');
+      return {
+        totalTodos: 0,
+        urgentTodos: 0,
+        totalNews: 0,
+      };
+    }
+
+    // Get all task lists
+    const taskLists = await googleTasksClient.getTaskLists();
+    if (!taskLists || taskLists.length === 0) {
+      console.log('No task lists found');
+      return {
+        totalTodos: 0,
+        urgentTodos: 0,
+        totalNews: 0,
+      };
+    }
+
+    // Fetch all tasks from all task lists
+    let allTasks = [];
+    let urgentTasks = [];
+
+    for (const taskList of taskLists) {
+      const tasks = await googleTasksClient.getTasks(taskList.id!, {
+        showCompleted: false, // Only active tasks
+      });
+
+      // Filter urgent tasks
+      const urgentInList = tasks.filter(task =>
+        task.notes && task.notes.includes('URGENT') ||
+        (task.title && task.title.toLowerCase().includes('urgent:'))
+      );
+
+      allTasks.push(...tasks);
+      urgentTasks.push(...urgentInList);
+    }
 
     const stats = {
-      totalTodos: allTodosRes.data?.length || 0,
-      urgentTodos: urgentRes.data?.length || 0,
-      totalNews: newsRes.data?.length || 0,
+      totalTodos: allTasks.length,
+      urgentTodos: urgentTasks.length,
+      totalNews: 0, // Company news not implemented with Google Tasks
     };
 
-    console.log('📊 Server-side stats:', stats);
+    console.log('📊 Google Tasks stats:', stats);
     return stats;
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('Error fetching Google Tasks stats:', error);
     return {
       totalTodos: 0,
       urgentTodos: 0,
@@ -54,7 +107,7 @@ export default async function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalTodos}</div>
             <p className="text-xs text-muted-foreground">
-              All todo tasks
+              All Google Tasks
             </p>
           </CardContent>
         </Card>
@@ -109,9 +162,9 @@ export default async function AdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Link href="/admin/todos/new">
-              <Button className="w-full">
-                <Calendar className="mr-2 h-4 w-4" />
-                Create New Task
+              <Button className="w-full bg-red-600 hover:bg-red-700">
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Create Urgent Task
               </Button>
             </Link>
             <Link href="/admin/news/new">
