@@ -15,6 +15,7 @@ const SCOPES = [
 
 export class GoogleTasksClient {
   private auth: Auth.OAuth2Client;
+  private readonly TARGET_TASKLIST_NAME = "To Do Kantor";
 
   constructor() {
     this.auth = oauth2Client;
@@ -110,7 +111,53 @@ export class GoogleTasksClient {
     }
   }
 
-  // Get tasks from a specific task list
+  // Get the target "To Do Kantor" task list
+  async getTargetTaskList() {
+    try {
+      const taskLists = await this.getTaskLists();
+      const targetList = taskLists.find(list => list.title === this.TARGET_TASKLIST_NAME);
+
+      if (!targetList) {
+        console.warn(`Task list "${this.TARGET_TASKLIST_NAME}" not found. Available lists:`, taskLists.map(l => l.title));
+        // Return the first task list as fallback
+        return taskLists.length > 0 ? taskLists[0] : null;
+      }
+
+      return targetList;
+    } catch (error) {
+      console.error('Error fetching target task list:', error);
+      throw error;
+    }
+  }
+
+  // Get tasks from the "To Do Kantor" list
+  async getTasksFromTargetList(options?: {
+    showCompleted?: boolean;
+    dueMax?: string;
+    dueMin?: string;
+  }) {
+    try {
+      const targetTaskList = await this.getTargetTaskList();
+      if (!targetTaskList) {
+        console.warn('No target task list available, returning empty array');
+        return [];
+      }
+
+      const tasks = this.getTasksClient();
+      const response = await tasks.tasks.list({
+        tasklist: targetTaskList.id!,
+        showCompleted: options?.showCompleted || false,
+        dueMax: options?.dueMax,
+        dueMin: options?.dueMin,
+      });
+      return response.data.items || [];
+    } catch (error) {
+      console.error('Error fetching tasks from target list:', error);
+      throw error;
+    }
+  }
+
+  // Get tasks from a specific task list (for backward compatibility)
   async getTasks(taskListId: string, options?: {
     showCompleted?: boolean;
     dueMax?: string;
@@ -131,8 +178,38 @@ export class GoogleTasksClient {
     }
   }
 
-  // Create a new task
-  async createTask(taskListId: string, taskData: {
+  // Create a new task in the "To Do Kantor" list
+  async createTask(taskData: {
+    title: string;
+    notes?: string;
+    due?: string;
+    completed?: boolean;
+  }) {
+    try {
+      const targetTaskList = await this.getTargetTaskList();
+      if (!targetTaskList) {
+        throw new Error('No target task list available');
+      }
+
+      const tasks = this.getTasksClient();
+      const response = await tasks.tasks.insert({
+        tasklist: targetTaskList.id!,
+        requestBody: {
+          title: taskData.title,
+          notes: taskData.notes,
+          due: taskData.due,
+          status: taskData.completed ? 'completed' : 'needsAction',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating task:', error);
+      throw error;
+    }
+  }
+
+  // Create a new task in a specific task list (for backward compatibility)
+  async createTaskInList(taskListId: string, taskData: {
     title: string;
     notes?: string;
     due?: string;

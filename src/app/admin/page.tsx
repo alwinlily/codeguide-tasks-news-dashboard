@@ -39,35 +39,16 @@ async function getStats() {
       };
     }
 
-    // Get all task lists
-    const taskLists = await googleTasksClient.getTaskLists();
-    if (!taskLists || taskLists.length === 0) {
-      console.log('No task lists found');
-      return {
-        totalTodos: 0,
-        urgentTodos: 0,
-        totalNews: 0,
-      };
-    }
+    // Fetch tasks from the "To Do Kantor" list only
+    const allTasks = await googleTasksClient.getTasksFromTargetList({
+      showCompleted: false, // Only active tasks
+    });
 
-    // Fetch all tasks from all task lists
-    let allTasks = [];
-    let urgentTasks = [];
-
-    for (const taskList of taskLists) {
-      const tasks = await googleTasksClient.getTasks(taskList.id!, {
-        showCompleted: false, // Only active tasks
-      });
-
-      // Filter urgent tasks
-      const urgentInList = tasks.filter(task =>
-        task.notes && task.notes.includes('URGENT') ||
-        (task.title && task.title.toLowerCase().includes('urgent:'))
-      );
-
-      allTasks.push(...tasks);
-      urgentTasks.push(...urgentInList);
-    }
+    // Filter urgent tasks
+    const urgentTasks = allTasks.filter(task =>
+      task.notes && task.notes.includes('URGENT') ||
+      (task.title && task.title.toLowerCase().includes('urgent:'))
+    );
 
     const stats = {
       totalTodos: allTasks.length,

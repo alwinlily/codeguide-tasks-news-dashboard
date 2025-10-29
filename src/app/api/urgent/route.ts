@@ -48,44 +48,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Get user's task lists
-    const taskLists = await googleTasksClient.getTaskLists();
-    if (!taskLists || taskLists.length === 0) {
-      return NextResponse.json([]);
-    }
+    // Get tasks from the "To Do Kantor" list only
+    const tasks = await googleTasksClient.getTasksFromTargetList({
+      showCompleted: false, // Only get active tasks
+    });
 
-    // Get urgent tasks from all task lists
-    const urgentTasks = [];
-    for (const taskList of taskLists) {
-      const tasks = await googleTasksClient.getTasks(taskList.id!, {
-        showCompleted: false, // Only get active tasks
-      });
+    const transformedTasks = tasks.map(task => {
+      // Filter for urgent tasks (marked with URGENT in notes or title)
+      const isUrgent = task.notes && task.notes.includes('URGENT') ||
+                      (task.title && task.title.toLowerCase().includes('urgent:'));
 
-      const transformedTasks = tasks.map(task => {
-        // Filter for urgent tasks (marked with URGENT in notes or title)
-        const isUrgent = task.notes && task.notes.includes('URGENT') ||
-                        (task.title && task.title.toLowerCase().includes('urgent:'));
+      if (!isUrgent) return null;
 
-        if (!isUrgent) return null;
-
-        return {
-          id: task.id,
-          title: (task.title || '').replace(/^urgent:\s*/i, ''), // Remove "URGENT:" prefix if present
-          dueDate: task.due || new Date().toISOString(),
-          isUrgent: true,
-          createdAt: task.updated || new Date().toISOString(),
-          updatedAt: task.updated || new Date().toISOString(),
-          userId: 'google-tasks-user'
-        };
-      }).filter((task): task is NonNullable<typeof task> => task !== null);
-
-      urgentTasks.push(...transformedTasks);
-    }
+      return {
+        id: task.id,
+        title: (task.title || '').replace(/^urgent:\s*/i, ''), // Remove "URGENT:" prefix if present
+        dueDate: task.due || new Date().toISOString(),
+        isUrgent: true,
+        createdAt: task.updated || new Date().toISOString(),
+        updatedAt: task.updated || new Date().toISOString(),
+        userId: 'google-tasks-user'
+      };
+    }).filter((task): task is NonNullable<typeof task> => task !== null);
 
     // Sort by due date
-    urgentTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    transformedTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-    return NextResponse.json(urgentTasks);
+    return NextResponse.json(transformedTasks);
   } catch (error) {
     console.error("Error fetching urgent todos from Google Tasks:", error);
     return NextResponse.json(
@@ -121,12 +110,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createTodoSchema.parse(body);
 
-    // Get user's task lists or create default one
-    const taskLists = await googleTasksClient.getTaskLists();
-    let targetTaskListId = taskLists.length > 0 ? taskLists[0].id! : '@default';
-
-    // Create urgent task in Google Tasks
-    const newTask = await googleTasksClient.createTask(targetTaskListId, {
+    // Create urgent task in the "To Do Kantor" list
+    const newTask = await googleTasksClient.createTask({
       title: `URGENT: ${validatedData.title}`, // Add URGENT prefix
       notes: 'URGENT: This task requires immediate attention.',
       due: validatedData.dueDate ? formatDateForGoogleTasks(validatedData.dueDate) : undefined,
