@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, ArrowLeft } from "lucide-react";
+import { Calendar, ArrowLeft, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
@@ -17,7 +16,7 @@ export default function NewTodoPage() {
   const [formData, setFormData] = useState({
     title: "",
     dueDate: format(new Date(), 'yyyy-MM-dd'),
-    isUrgent: false,
+    isUrgent: true, // Always create urgent tasks
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +24,7 @@ export default function NewTodoPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/todos", {
+      const response = await fetch("/api/urgent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,8 +55,11 @@ export default function NewTodoPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">New Task</h1>
-          <p className="text-muted-foreground">Create a new todo task</p>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <AlertTriangle className="h-8 w-8 text-red-500" />
+            New Urgent Task
+          </h1>
+          <p className="text-muted-foreground">Create a new urgent task that requires immediate attention</p>
         </div>
       </div>
 
@@ -93,15 +95,14 @@ export default function NewTodoPage() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isUrgent"
-                checked={formData.isUrgent}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, isUrgent: checked as boolean })
-                }
-              />
-              <Label htmlFor="isUrgent">Mark as urgent</Label>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">This will be created as an urgent task</span>
+              </div>
+              <p className="text-sm text-red-600 mt-1">
+                Urgent tasks are marked with "URGENT:" prefix and will appear in the urgent tasks section.
+              </p>
             </div>
 
             <div className="flex gap-4">

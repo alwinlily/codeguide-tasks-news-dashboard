@@ -52,26 +52,18 @@ export default function TodosPage() {
 
   const fetchTodos = async () => {
     try {
-      // Fetch both regular todos and urgent tasks
-      const [todosResponse, urgentResponse] = await Promise.all([
-        fetch('/api/todos'),
-        fetch('/api/urgent')
-      ]);
+      // Only fetch urgent tasks
+      const urgentResponse = await fetch('/api/urgent');
 
-      let allTasks: TodoTask[] = [];
-
-      if (todosResponse.ok) {
-        const todosData = await todosResponse.json();
-        allTasks = [...allTasks, ...todosData];
-      }
+      let urgentTasks: TodoTask[] = [];
 
       if (urgentResponse.ok) {
         const urgentData = await urgentResponse.json();
-        allTasks = [...allTasks, ...urgentData];
+        urgentTasks = urgentData;
       }
 
-      // Sort all tasks by due date and creation date
-      allTasks.sort((a, b) => {
+      // Sort urgent tasks by due date and creation date
+      urgentTasks.sort((a, b) => {
         const dateA = new Date(a.dueDate);
         const dateB = new Date(b.dueDate);
         if (dateA.getTime() !== dateB.getTime()) {
@@ -80,9 +72,9 @@ export default function TodosPage() {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
 
-      setTodos(allTasks);
+      setTodos(urgentTasks);
     } catch (error) {
-      console.error('Error fetching todos:', error);
+      console.error('Error fetching urgent tasks:', error);
     } finally {
       setLoading(false);
     }
@@ -90,18 +82,15 @@ export default function TodosPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      // Find the task to determine which API endpoint to use
-      const taskToDelete = todos.find(todo => todo.id === id);
-      const endpoint = taskToDelete?.isUrgent ? '/api/urgent' : '/api/todos';
-
-      const response = await fetch(`${endpoint}?id=${id}`, {
+      // Always use urgent endpoint now
+      const response = await fetch(`/api/urgent?id=${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {
         setTodos(todos.filter(todo => todo.id !== id));
       }
     } catch (error) {
-      console.error('Error deleting todo:', error);
+      console.error('Error deleting urgent task:', error);
     }
   };
 
@@ -113,20 +102,20 @@ export default function TodosPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Manage all todo tasks</p>
+          <h1 className="text-3xl font-bold">Urgent Tasks</h1>
+          <p className="text-muted-foreground">Manage urgent tasks that require immediate attention</p>
         </div>
         <Link href="/admin/todos/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Task
+          <Button className="bg-red-600 hover:bg-red-700">
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            New Urgent Task
           </Button>
         </Link>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Tasks</CardTitle>
+          <CardTitle>Urgent Tasks</CardTitle>
         </CardHeader>
         <CardContent>
           {todos.length > 0 ? (
@@ -203,11 +192,15 @@ export default function TodosPage() {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No tasks found</p>
+              <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+              <p className="text-muted-foreground">No urgent tasks found</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Urgent tasks will appear here once created or synced from Google Tasks.
+              </p>
               <Link href="/admin/todos/new" className="mt-4">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create your first task
+                <Button className="bg-red-600 hover:bg-red-700">
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Create your first urgent task
                 </Button>
               </Link>
             </div>
