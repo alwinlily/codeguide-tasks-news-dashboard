@@ -4,7 +4,7 @@ import { google, Auth, tasks_v1 } from 'googleapis';
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/google/auth/callback`
+  null // Will be set dynamically when needed
 );
 
 // Google Tasks API scopes
@@ -31,8 +31,12 @@ export class GoogleTasksClient {
   }
 
   // Exchange authorization code for tokens
-  async exchangeCodeForTokens(code: string) {
+  async exchangeCodeForTokens(code: string, redirectUri?: string) {
     try {
+      if (redirectUri) {
+        // Temporarily set redirect URI for this exchange
+        this.auth.redirectUri = redirectUri;
+      }
       const { tokens } = await this.auth.getToken(code);
       this.auth.setCredentials(tokens);
       return tokens;

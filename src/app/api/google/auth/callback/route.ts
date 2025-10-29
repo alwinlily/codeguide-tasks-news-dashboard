@@ -20,8 +20,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Exchange code for tokens
-    const tokens = await googleTasksClient.exchangeCodeForTokens(code);
+    // Get the current request origin for dynamic redirect URI
+    const origin = request.headers.get('origin') || request.nextUrl.origin;
+    const redirectUri = `${origin}/api/google/auth/callback`;
+
+    // Exchange code for tokens with dynamic redirect URI
+    const tokens = await googleTasksClient.exchangeCodeForTokens(code, redirectUri);
 
     // Store tokens securely in cookies
     const response = NextResponse.redirect(
